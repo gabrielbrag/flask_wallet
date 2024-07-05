@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import json
-from models.account import Account, Accounts_manager
+from models.account import Account
+from services.accounts_manager import Accounts_manager, AccountNotFoundException, TransactionDataException
 
 app = Flask(__name__)
 
@@ -13,42 +14,42 @@ def get_home():
    
 @app.route('/balance')
 def get_balance():
-    get_response = accounts_manager.get_account(request.args.get('account_id'))
-    
-    if get_response == None:
+    try:
+        balance = accounts_manager.get_account_balance(request.args.get('account_id'))
+    except AccountNotFoundException:
         return "Account not found", 404
-    return json.dumps(get_response)
-
+    
+    return str(balance), 200
+        
 @app.route('/event', methods=['POST'])
 def post_event():
     posted_json = request.get_json()    
 
     json_dict = json.loads(posted_json)   
 
-    # Validate required fields
-    required_fields = ["destination", "amount", "type"]
-    if not all(field in json_dict for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    # Additional validation logic if needed (e.g., type checks)
-    valid_event_types = ["deposit", "withdraw"]  # Example valid types
-    if json_dict["type"] not in valid_event_types:
-        return jsonify({"error": "Invalid event type"}), 400
-    
-    get_response = accounts_manager.get_account(json_dict["destination"])
+    origin = None
+    if "origin" in json_dict:
+        origin = json_dict["origin"]
 
-    if get_response == None:
-
-        new_account = Account(id = json_dict["destination"], balance = json_dict["amount"])
-        accounts_manager.add_account(new_account)
-        
-        return_data = { "destination":{} }
-        return_data["destination"]["id"] = new_account.id
-        return_data["destination"]["balance"] = new_account.balance
-        
+    return_data = {}
+    return_string = ""
+    
+    try:
+        print(json_dict)
+        return_data = accounts_manager.event(event_type=json_dict["type"], destination=json_dict["destination"], value=json_dict["amount"], origin=origin)
+        return_string = jsonify(return_data)
         return_code = 201
         
-    return jsonify(return_data), return_code
+    except AccountNotFoundException:
+        return_code = 404
+        return_string = '0'
+    except TransactionDataException as ex:
+        return_string = str(ex)
+        return_code = 400
+    except Exception:
+        return_code = 400
+    
+    return return_string, return_code
 
 if __name__ == '__main__':
     app.run(debug=True)

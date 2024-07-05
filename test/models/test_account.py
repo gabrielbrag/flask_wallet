@@ -5,12 +5,13 @@ import os
 # Made to prevent changes in PYTHONPATH
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 
-from api_ebanx.models.account import Account, Accounts_manager
+from api_ebanx.models.account import Account
+from api_ebanx.services.accounts_manager import Accounts_manager, AccountNotFoundException
 
 def test_get_inexistent_account():
     accounts_manager = Accounts_manager()
-    test_account = accounts_manager.get_account(330)
-    assert test_account == None
+    with pytest.raises(AccountNotFoundException) as ex:
+        test_account = accounts_manager.get_account(330)
     
 def test_create_account():
     account = Account(id = 120, balance = 300)

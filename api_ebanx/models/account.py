@@ -18,16 +18,9 @@ class Account():
             self.balance += value
         if type == 'withdraw':
             self.balance -= value
-            
-class Accounts_manager:
-    def __init__(self) -> None:
-        self.accounts = []
-        
-    def get_account(self, account_id):
-        for account in self.accounts:
-            if account["id"] == account_id:
-                return account
-        return None  # Account not found in the list
     
-    def add_account(self, account):
-        self.accounts.append(account)
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'balance': self.balance
+        }
