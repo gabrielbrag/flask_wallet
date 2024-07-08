@@ -1,16 +1,11 @@
 from flask import Flask, request, jsonify
 import json
-from models.account import Account
 from services.accounts_manager import Accounts_manager, AccountNotFoundException, TransactionDataException
 
 app = Flask(__name__)
 
 event_types = ["deposit", 'withdraw']
 accounts_manager = Accounts_manager()
-
-@app.route('/')
-def get_home():
-   return "hello world"
    
 @app.route('/balance')
 def get_balance():
@@ -25,7 +20,7 @@ def get_balance():
 def post_event():
     posted_json = request.get_json()    
 
-    json_dict = json.loads(posted_json)   
+    json_dict = json.loads(posted_json)  
 
     origin = None
     if "origin" in json_dict:

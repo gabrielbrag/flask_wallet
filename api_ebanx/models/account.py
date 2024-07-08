@@ -3,11 +3,11 @@
 event_types = ["deposit", 'withdraw']
 
 class Account():
-    def __init__(self, id, balance):       
+    def __init__(self, id:str, balance:float) -> None:       
         self.id        = id
         self.balance   = balance
                 
-    def event(self, type, value):
+    def event(self, type:str, value:float) -> None:
         if type not in event_types:
             raise ValueError("invalid operation type")
         
@@ -18,9 +18,3 @@ class Account():
             self.balance += value
         if type == 'withdraw':
             self.balance -= value
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'balance': self.balance
-        }

@@ -22,21 +22,20 @@ def test_add_account_and_check_balance():
     
 def test_check_inexistent_account_balance():
     with pytest.raises(AccountNotFoundException) as ex:
-        manager.get_account_balance(account_id=1000)     
-
+        manager.get_account_balance(account_id=1000)
 
 def test_mandatory_transaction_fields():
     #Deposit without value
     with pytest.raises(TransactionDataException) as ex:
-        response_data = manager.event(event_type="deposit", destination=2, value=0) 
+        manager.event(event_type="deposit", destination=2, value=0) 
 
     #Deposit without destination
     with pytest.raises(TransactionDataException) as ex:
-        response_data = manager.event(event_type="deposit", destination=0, value=100) 
+        manager.event(event_type="deposit", destination=0, value=100) 
         
     #Do a invalid transaction
     with pytest.raises(TransactionDataException) as ex:
-        response_data = manager.event(event_type="invalid transaction", destination=30, value=100) 
+        manager.event(event_type="invalid transaction", destination=30, value=100) 
 
 def test_deposit_event():
     current_balance = manager.get_account_balance(account_id = 1)        
@@ -66,5 +65,4 @@ def test_transfer_event():
 def test_invalid_transfer():
     #Transfer without origin 
     with pytest.raises(AccountNotFoundException) as ex:
-        response_data = manager.event(event_type="transfer", value=50, destination=2) 
-        
+        manager.event(event_type="transfer", value=50, destination=2)

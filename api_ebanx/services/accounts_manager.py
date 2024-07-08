@@ -11,20 +11,20 @@ class Accounts_manager:
     def __init__(self) -> None:
         self.accounts = []
         
-    def get_account(self, account_id):
+    def get_account(self, account_id:int) -> Account:
         for account in self.accounts:
             if account.id == account_id:
                 return account
         raise AccountNotFoundException("Account not found")
     
-    def add_account(self, account):
+    def add_account(self, account:Account):
         self.accounts.append(account)
     
-    def get_account_balance(self, account_id):
+    def get_account_balance(self, account_id:int):
         account = self.get_account(account_id)
         return account.balance
                 
-    def event(self, event_type, destination, value, **kwargs):        
+    def event(self, event_type:str, destination:int, value:float, **kwargs) -> any:        
         if event_type == '':
             raise TransactionDataException("event_type could not be empty")
         
@@ -34,7 +34,6 @@ class Accounts_manager:
         if value == 0:
             raise TransactionDataException("the value of the transaction could not be 0")
         
-        # Additional validation logic if needed (e.g., type checks)
         valid_event_types = ["deposit", "withdraw", "transfer"] 
         if event_type not in valid_event_types:
             raise TransactionDataException("invalid event type")
@@ -45,8 +44,9 @@ class Accounts_manager:
             destination_account = self.get_account(destination)
             
         except AccountNotFoundException:
-            if event_type == "withdraw":
-                raise AccountNotFoundException("could not withdraw from a inexisting account")
+            if event_type in ("withdraw", "transfer"):
+                error_message = "withdraw from" if event_type == "withdraw" else "transfer to"
+                raise AccountNotFoundException("could not " + error_message + " an inexisting account")
             else:
                 destination_account = Account(id = destination, balance = value)
                 self.add_account(destination_account)
@@ -72,14 +72,3 @@ class Accounts_manager:
             return_data["origin"]["balance"]    = origin_account.balance
                     
         return return_data
-        
-    
-    # def transfer_between_accounts(self, origin_id, destination_id, value):
-    #     found_origin        = False
-    #     found_destination   = False
-        
-    #     for index, account in enumerate(self.accounts):
-    #         if account.id == origin_id:
-                
-    #         if account.id == destination_id:       
-                

@@ -21,6 +21,10 @@ def client(app):
 def test_get_balance_inexistent_account(client):
     response = client.get('/balance?account_id=1')
     assert response.status_code == 404
+    
+def test_get_balance_without_account(client):
+    response = client.get('/balance')
+    assert response.status_code == 404
   
 def test_create_new_account_and_make_deposit(client):
     response = client.post('/event', json='{"type":"deposit", "destination":"100", "amount":10}')
@@ -64,7 +68,6 @@ def test_withdraw_from_existing_account(client):
     
 def test_transfer_from_existing_account(client):
     response_from_get = client.get('/balance?account_id=100')
-    print(response_from_get)
     expected_balance = float(response_from_get.text) + 10
     
     #Creates a new account
@@ -74,3 +77,16 @@ def test_transfer_from_existing_account(client):
     
     assert response.status_code == 201
     assert response.json == {"origin": {"id":"200", "balance":35}, "destination": {"id":"100", "balance":expected_balance}}
+    
+def test_transfer_from_non_existing_account(client):       
+    response = client.post('/event', json='{"type":"transfer", "origin":299, "destination":"100", "amount":10}')
+    
+    assert response.status_code == 404
+    assert response.text == '0'
+    
+def test_transfer_to_non_existing_account(client):
+    response = client.post('/event', json='{"type":"transfer", "origin":100, "destination":"674", "amount":10}')
+    
+    assert response.status_code == 404
+    assert response.text == '0'
+    
