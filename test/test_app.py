@@ -79,10 +79,7 @@ def test_transfer_from_existing_account(client):
     
     assert response.status_code == 201
     assert response.json == {"origin": {"id":"200", "balance":35}, "destination": {"id":"100", "balance":expected_balance}}
-    
-# def test_transfer_to_a_non_existing_account(client):
-#     #When transfer to a non-existing account, the account should be created
-    
+
 def test_transfer_from_non_existing_account(client):       
     response = client.post('/event', json={"type":"transfer", "origin":299, "destination":"100", "amount":10})
     

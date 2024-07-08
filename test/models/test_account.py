@@ -10,8 +10,8 @@ from api_ebanx.services.accounts_manager import Accounts_manager, AccountNotFoun
 
 def test_get_inexistent_account():
     accounts_manager = Accounts_manager()
-    with pytest.raises(AccountNotFoundException) as ex:
-        test_account = accounts_manager.get_account(330)
+    with pytest.raises(AccountNotFoundException):
+        accounts_manager.get_account(330)
     
 def test_create_account():
     account = Account(id = 120, balance = 300)
