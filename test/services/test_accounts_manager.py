@@ -27,42 +27,50 @@ def test_check_inexistent_account_balance():
 def test_mandatory_transaction_fields():
     #Deposit without value
     with pytest.raises(TransactionDataException) as ex:
-        manager.event(event_type="deposit", destination=2, value=0) 
+        manager.event(event_type="deposit", destination=2, value=0, origin=None) 
 
     #Deposit without destination
     with pytest.raises(TransactionDataException) as ex:
-        manager.event(event_type="deposit", destination=0, value=100) 
+        manager.event(event_type="deposit", destination=0, value=100, origin=None) 
         
     #Do a invalid transaction
     with pytest.raises(TransactionDataException) as ex:
-        manager.event(event_type="invalid transaction", destination=30, value=100) 
+        manager.event(event_type="invalid transaction", destination=30, value=100, origin=None) 
 
 def test_deposit_event():
     current_balance = manager.get_account_balance(account_id = 1)        
-    manager.event(event_type = "deposit", destination = 1, value = 20)
+    manager.event(event_type = "deposit", destination = 1, value = 20, origin=None)
     balance = manager.get_account_balance(account_id = 1)
     
     assert balance == (current_balance + 20)    
     
 def test_withdraw_event():
     current_balance = manager.get_account_balance(account_id = 1)
-    manager.event(event_type = "withdraw", destination = 1, value = 10)
+    manager.event(event_type = "withdraw", origin = 1, value = 10, destination=None)
     balance = manager.get_account_balance(account_id = 1)
     
     assert balance == (current_balance - 10)
     
-def test_transfer_event():
-    #Creating a new account
-    manager.event(event_type = "deposit", destination = 2, value = 350)
+def test_transfer_event_between_existing_accounts():
+    manager.event(event_type = "deposit", destination = 2, value = 10, origin=None)
+
+    balance_of_account_1 = manager.get_account_balance(account_id = 1)
+      
+    response_data = manager.event(event_type="transfer", destination=2, value=50, origin=1)
     
-    current_balance = manager.get_account_balance(account_id = 1)
+    assert response_data["origin"]["balance"] == (balance_of_account_1 - 50)
+    assert response_data["destination"]["balance"] == 60 #10 from created account + transfer event
     
-    response_data = manager.event(event_type="transfer", destination=1, value=50, origin=2)
+def test_transfer_event_to_non_existing_account():
+    origin_account = 2
+    origin_balance_before_event = manager.get_account_balance(account_id = origin_account)
+
+    response_data = manager.event(event_type="transfer", destination=20, value=50, origin=origin_account)
     
-    assert response_data["origin"]["balance"] == 300
-    assert response_data["destination"]["balance"] == current_balance + 50
+    assert response_data["origin"]["balance"] == origin_balance_before_event - 50
+    assert response_data["destination"]["balance"] == 50
     
 def test_invalid_transfer():
     #Transfer without origin 
-    with pytest.raises(AccountNotFoundException) as ex:
-        manager.event(event_type="transfer", value=50, destination=2)
+    with pytest.raises(TransactionDataException) as ex:
+        manager.event(event_type="transfer", value=50, destination=2, origin=None)

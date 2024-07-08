@@ -23,52 +23,65 @@ class Accounts_manager:
     def get_account_balance(self, account_id:int):
         account = self.get_account(account_id)
         return account.balance
-                
-    def event(self, event_type:str, destination:int, value:float, **kwargs) -> any:        
-        if event_type == '':
+    
+    def validate_transaction(self, event_type:str, destination:int, value:float, origin:int):
+        if not event_type:
             raise TransactionDataException("event_type could not be empty")
         
-        if destination == 0:
-            raise TransactionDataException("destination could not be empty")
-        
-        if value == 0:
-            raise TransactionDataException("the value of the transaction could not be 0")
-        
+        if (value is None or value == 0):
+           raise TransactionDataException("the value of the transaction could not be 0")
+                       
         valid_event_types = ["deposit", "withdraw", "transfer"] 
         if event_type not in valid_event_types:
             raise TransactionDataException("invalid event type")
-        
+
+        if not destination and not origin:
+            raise TransactionDataException("destination or origin must be provided")
+
+        if event_type == "transfer" and (not destination or not origin):
+            raise TransactionDataException("Both origin and destination must be provided for a transfer")       
+       
+               
+    def event(self, event_type:str, destination:int, value:float, origin:int):
+        self.validate_transaction(event_type, destination, value, origin)
+
         origin_account = None
+        destination_account = None
+
+        try:
+            if origin:
+                origin_account = self.get_account(origin)
+        except AccountNotFoundException:
+            raise AccountNotFoundException("origin account not found")
         
         try:
-            destination_account = self.get_account(destination)
-            
+            if destination:
+                destination_account = self.get_account(destination)
         except AccountNotFoundException:
-            if event_type in ("withdraw", "transfer"):
-                error_message = "withdraw from" if event_type == "withdraw" else "transfer to"
-                raise AccountNotFoundException("could not " + error_message + " an inexisting account")
-            else:
-                destination_account = Account(id = destination, balance = value)
-                self.add_account(destination_account)
+            destination_account = Account(id = destination, balance = 0)
+            self.add_account(destination_account)
+
+        if (event_type == "transfer"):
+            origin_account.event("withdraw", value)
+            destination_account.event("deposit", value)
         else:
-            if (event_type == "transfer"):
-                origin_id = kwargs.get("origin")
-                try:
-                    origin_account = self.get_account(origin_id)
-                    origin_account.event("withdraw", value)
-                    destination_account.event("deposit", value)
-                except AccountNotFoundException:
-                    raise AccountNotFoundException("origin account not found")
-            else:   
+            if destination_account:
                 destination_account.event(event_type, value)
+            if origin_account:
+                origin_account.event(event_type, value)
         
-        return_data = { "destination":{} }
-        return_data["destination"]["id"]        = str(destination_account.id)
-        return_data["destination"]["balance"]   = destination_account.balance
+        return_data = {}
         
-        if origin_account != None:
-            return_data["origin"] = {}
-            return_data["origin"]["id"]         = str(origin_account.id)
-            return_data["origin"]["balance"]    = origin_account.balance
+        if destination_account:
+            return_data["destination"] = {
+                "id": str(destination_account.id),
+                "balance": destination_account.balance
+            }
+            
+        if origin_account:
+            return_data["origin"] = {
+                "id": str(origin_account.id),
+                "balance": origin_account.balance
+            }
                     
         return return_data

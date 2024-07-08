@@ -7,31 +7,41 @@ app = Flask(__name__)
 event_types = ["deposit", 'withdraw']
 accounts_manager = Accounts_manager()
    
+@app.route('/reset', methods=["POST"])
+def reset_api():
+    global accounts_manager
+    accounts_manager = Accounts_manager()
+    return "OK", 200
+   
 @app.route('/balance')
 def get_balance():
     try:
-        balance = accounts_manager.get_account_balance(request.args.get('account_id'))
+        if request.args.get('account_id'):
+            balance = accounts_manager.get_account_balance(int(request.args.get('account_id')))
+        else:
+            return "0", 404
     except AccountNotFoundException:
-        return "Account not found", 404
+        return "0", 404
     
     return str(balance), 200
         
 @app.route('/event', methods=['POST'])
 def post_event():
-    posted_json = request.get_json()    
-
-    json_dict = json.loads(posted_json)  
+    json_dict = request.get_json()    
 
     origin = None
     if "origin" in json_dict:
-        origin = json_dict["origin"]
+        origin = int(json_dict["origin"])
+
+    destination = None
+    if "destination" in json_dict:
+        destination = int(json_dict["destination"])
 
     return_data = {}
     return_string = ""
     
     try:
-        print(json_dict)
-        return_data = accounts_manager.event(event_type=json_dict["type"], destination=json_dict["destination"], value=json_dict["amount"], origin=origin)
+        return_data = accounts_manager.event(event_type=json_dict["type"], destination=destination, value=json_dict["amount"], origin=origin)
         return_string = jsonify(return_data)
         return_code = 201
         
@@ -41,7 +51,8 @@ def post_event():
     except TransactionDataException as ex:
         return_string = str(ex)
         return_code = 400
-    except Exception:
+    except Exception as ex:
+        print(ex)
         return_code = 400
     
     return return_string, return_code
