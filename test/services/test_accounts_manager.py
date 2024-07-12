@@ -2,10 +2,6 @@ import pytest
 import sys
 import os
 
-# Made to prevent changes in PYTHONPATH
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(current_dir) + '../../api_ebanx')
-
 from api_ebanx.models.account import Account
 from api_ebanx.services.accounts_manager import Accounts_manager, AccountNotFoundException, TransactionDataException
 
